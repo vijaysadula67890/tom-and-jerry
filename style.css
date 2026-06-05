@@ -1,0 +1,63 @@
+/* General reset for full-screen layout */
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #222;
+    font-family: 'Arial', sans-serif;
+    color: white;
+}
+
+/* UI Layer: sits on top of everything */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none; /* Allows clicking through the empty space */
+}
+
+/* Lobby Box: Needs to be clickable */
+#lobby {
+    background: rgba(0, 0, 0, 0.85);
+    padding: 30px;
+    border-radius: 15px;
+    margin-top: 100px;
+    pointer-events: auto; /* Re-enables clicking for buttons */
+    text-align: center;
+    border: 2px solid #555;
+}
+
+/* Timer: Fixed at top of screen */
+#timer {
+    font-size: 32px;
+    margin-top: 20px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px #000;
+}
+
+/* Game Container: Centered */
+#game {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Button Styling */
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
