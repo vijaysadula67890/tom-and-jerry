@@ -9,19 +9,35 @@ let gameover = false;
 
 const dpad = { left: false, right: false, up: false, down: false };
 
-// Coordinates scaled from 975x717 → 800x600
-const TABLES = [
-    { x1: 295, y1: 402, x2: 390, y2: 502 }, // Table 1 bottom-left
-    { x1: 591, y1: 402, x2: 685, y2: 502 }, // Table 2 bottom-right
-    { x1: 246, y1: 201, x2: 341, y2: 301 }, // Table 3 top-left
-    { x1: 591, y1: 201, x2: 685, y2: 301 }, // Table 4 top-right
+// Top-left corner + size (scaled from 975x717 to 800x600)
+const TABLE_WALLS = [
+    { x: 295, y: 402, w: 95,  h: 100 }, // bottom-left
+    { x: 591, y: 402, w: 94,  h: 100 }, // bottom-right
+    { x: 246, y: 201, w: 95,  h: 100 }, // top-left
+    { x: 591, y: 201, w: 94,  h: 100 }, // top-right
 ];
+
+// For spawn exclusion — same coords
+function isOnTable(px, py, margin = 30) {
+    for (const t of TABLE_WALLS) {
+        if (px > t.x - margin && px < t.x + t.w + margin &&
+            py > t.y - margin && py < t.y + t.h + margin) return true;
+    }
+    return false;
+}
 
 const SPEEDS = { cat: 2, mouse: 3 };
 const CATCH_DISTANCE = 30;
 
 const config = {
-    type: Phaser.AUTO, width: 800, height: 600, parent: "game",
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    parent: "game",
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
     physics: { default: 'arcade', arcade: { debug: true } },
     scene: { preload, create, update }
 };
@@ -66,9 +82,7 @@ socket.on("players", (data) => {
             const sprite = scene.physics.add.sprite(players[id].x, players[id].y, role);
             sprite.setScale(role === "cat" ? 0.175 : 0.025);
             sprite.setCollideWorldBounds(true);
-            scene.wallBodies.forEach(wall => {
-                scene.physics.add.collider(sprite, wall);
-            });
+            scene.wallBodies.forEach(wall => scene.physics.add.collider(sprite, wall));
             scene.playerSprites[id] = sprite;
             if (id === socket.id) { myId = id; myRole = role; }
         } else if (id !== socket.id) {
@@ -113,25 +127,28 @@ function create() {
     map.displayWidth = 800;
     map.displayHeight = 600;
 
-    const allWalls = [
-        // Boundaries
-        { x: 400, y:   5, w: 800, h: 10 },
-        { x: 400, y: 595, w: 800, h: 10 },
-        { x:   5, y: 300, w: 10,  h: 600 },
-        { x: 795, y: 300, w: 10,  h: 600 },
-        // Tables (scaled coordinates)
-        { x: 342, y: 452, w:  95, h: 100 },
-        { x: 638, y: 452, w:  94, h: 100 },
-        { x: 293, y: 251, w:  95, h: 100 },
-        { x: 638, y: 251, w:  94, h: 100 },
+    // Boundary walls — use rectangles with physics
+    const boundaries = [
+        { x: 0,   y: 0,   w: 800, h: 10  }, // top
+        { x: 0,   y: 590, w: 800, h: 10  }, // bottom
+        { x: 0,   y: 0,   w: 10,  h: 600 }, // left
+        { x: 790, y: 0,   w: 10,  h: 600 }, // right
     ];
 
-    for (const d of allWalls) {
-        const wall = this.add.zone(d.x, d.y, d.w, d.h);
-        this.physics.add.existing(wall, true);
-        wall.body.setSize(d.w, d.h);
-        wall.body.reset(d.x, d.y);
-        this.wallBodies.push(wall);
+    for (const d of [...boundaries, ...TABLE_WALLS]) {
+        // Use a Rectangle game object — position is TOP-LEFT
+        const rect = this.add.rectangle(
+            d.x + d.w / 2,  // Phaser rectangle x = center
+            d.y + d.h / 2,  // Phaser rectangle y = center
+            d.w, d.h,
+            0x000000, 0      // invisible
+        );
+        this.physics.add.existing(rect, true);
+        // Force body to exact top-left position
+        rect.body.position.x = d.x;
+        rect.body.position.y = d.y;
+        rect.body.setSize(d.w, d.h);
+        this.wallBodies.push(rect);
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
