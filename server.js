@@ -6,21 +6,19 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
-
 app.use(express.static(path.join(__dirname)));
 
-// Scaled coordinates matching game.js
 const TABLES = [
-    { x1: 295, y1: 402, x2: 390, y2: 502 },
-    { x1: 591, y1: 402, x2: 685, y2: 502 },
-    { x1: 246, y1: 201, x2: 341, y2: 301 },
-    { x1: 591, y1: 201, x2: 685, y2: 301 },
+    { x: 295, y: 402, w: 95,  h: 100 },
+    { x: 591, y: 402, w: 94,  h: 100 },
+    { x: 246, y: 201, w: 95,  h: 100 },
+    { x: 591, y: 201, w: 94,  h: 100 },
 ];
 
 function isOnTable(px, py, margin = 40) {
     for (const t of TABLES) {
-        if (px > t.x1 - margin && px < t.x2 + margin &&
-            py > t.y1 - margin && py < t.y2 + margin) return true;
+        if (px > t.x - margin && px < t.x + t.w + margin &&
+            py > t.y - margin && py < t.y + t.h + margin) return true;
     }
     return false;
 }
