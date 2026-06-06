@@ -82,12 +82,13 @@ socket.on("players", (data) => {
             const sprite = scene.physics.add.sprite(players[id].x, players[id].y, role);
             sprite.setScale(role === "cat" ? 0.175 : 0.025);
             sprite.setCollideWorldBounds(true);
+            sprite.body.setCollideWorldBounds(true);
             scene.wallBodies.forEach(wall => scene.physics.add.collider(sprite, wall));
             scene.playerSprites[id] = sprite;
             if (id === socket.id) { myId = id; myRole = role; }
         } else if (id !== socket.id) {
-            scene.playerSprites[id].x = players[id].x;
-            scene.playerSprites[id].y = players[id].y;
+            scene.playerSprites[id].x = Phaser.Math.Clamp(players[id].x, 20, 780);
+            scene.playerSprites[id].y = Phaser.Math.Clamp(players[id].y, 20, 580);
         }
     }
 });
@@ -127,9 +128,9 @@ function create() {
     map.displayWidth = 800;
     map.displayHeight = 600;
 
-    // Boundary walls — use rectangles with physics
-    // World bounds handles edge collision — no manual boundary walls needed
+    // Use Phaser world bounds for left/right/top/bottom edges — pixel perfect
     this.physics.world.setBounds(0, 0, 800, 600);
+    this.physics.world.setBoundsCollision(true, true, true, true);
 
     for (const d of TABLE_WALLS) {
         // Use a Rectangle game object — position is TOP-LEFT
