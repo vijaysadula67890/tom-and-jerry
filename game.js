@@ -128,14 +128,10 @@ function create() {
     map.displayHeight = 600;
 
     // Boundary walls — use rectangles with physics
-    const boundaries = [
-        { x: 0,   y: 0,   w: 800, h: 10  }, // top
-        { x: 0,   y: 590, w: 800, h: 10  }, // bottom
-        { x: 0,   y: 0,   w: 10,  h: 600 }, // left
-        { x: 790, y: 0,   w: 10,  h: 600 }, // right
-    ];
+    // World bounds handles edge collision — no manual boundary walls needed
+    this.physics.world.setBounds(0, 0, 800, 600);
 
-    for (const d of [...boundaries, ...TABLE_WALLS]) {
+    for (const d of TABLE_WALLS) {
         // Use a Rectangle game object — position is TOP-LEFT
         const rect = this.add.rectangle(
             d.x + d.w / 2,  // Phaser rectangle x = center
