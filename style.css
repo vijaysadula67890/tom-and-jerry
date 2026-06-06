@@ -1,4 +1,3 @@
-/* General reset for full-screen layout */
 body {
     margin: 0;
     overflow: hidden;
@@ -7,32 +6,27 @@ body {
     color: white;
 }
 
-/* UI Layer: sits on top of everything */
 #ui-layer {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
-    pointer-events: none; /* Allows clicking through the empty space */
+    pointer-events: none;
 }
 
-/* Lobby Box: Needs to be clickable */
 #lobby {
     background: rgba(0, 0, 0, 0.85);
     padding: 30px;
     border-radius: 15px;
     margin-top: 100px;
-    pointer-events: auto; /* Re-enables clicking for buttons */
+    pointer-events: auto;
     text-align: center;
     border: 2px solid #555;
 }
 
-/* Timer: Fixed at top of screen */
 #timer {
     font-size: 32px;
     margin-top: 20px;
@@ -40,7 +34,6 @@ body {
     text-shadow: 2px 2px 4px #000;
 }
 
-/* Game Container: Centered */
 #game {
     display: flex;
     justify-content: center;
@@ -49,7 +42,6 @@ body {
     height: 100vh;
 }
 
-/* Button Styling */
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -60,4 +52,51 @@ button {
 button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+}
+
+/* ---- D-pad ---- */
+#dpad {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    user-select: none;
+}
+
+#dpad-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+#dpad-middle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#dpad-center {
+    width: 50px;
+    height: 50px;
+}
+
+#dpad button {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    color: white;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#dpad button:active {
+    background: rgba(255, 255, 255, 0.55);
 }
