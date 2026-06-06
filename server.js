@@ -64,8 +64,8 @@ io.on("connection", (socket) => {
 
     socket.on("move", (data) => {
         if (roomState.players[socket.id]) {
-            roomState.players[socket.id].x = data.x;
-            roomState.players[socket.id].y = data.y;
+            roomState.players[socket.id].x = Math.max(20, Math.min(780, data.x));
+            roomState.players[socket.id].y = Math.max(20, Math.min(580, data.y));
             io.emit("players", roomState.players);
         }
     });
