@@ -7,14 +7,33 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-// Serve all static files (index.html, game.js, style.css, assets/)
 app.use(express.static(path.join(__dirname)));
 
+// Same table data as client
+const TABLES = [
+    { x1: 360, y1: 480, x2: 475, y2: 600 },
+    { x1: 720, y1: 480, x2: 835, y2: 600 },
+    { x1: 300, y1: 240, x2: 415, y2: 360 },
+    { x1: 720, y1: 240, x2: 835, y2: 360 },
+];
+
+function isOnTable(px, py, margin = 40) {
+    for (const t of TABLES) {
+        if (px > t.x1 - margin && px < t.x2 + margin &&
+            py > t.y1 - margin && py < t.y2 + margin) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function randomSpawn() {
-    return {
-        x: Math.floor(50 + Math.random() * 700),
-        y: Math.floor(50 + Math.random() * 500)
-    };
+    let x, y;
+    do {
+        x = Math.floor(50 + Math.random() * 700);
+        y = Math.floor(50 + Math.random() * 500);
+    } while (isOnTable(x, y));
+    return { x, y };
 }
 
 let roomState = {
@@ -62,7 +81,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("caught", () => { io.emit("game-over", { winner: "cat" }); });
+    socket.on("caught",  () => { io.emit("game-over", { winner: "cat"   }); });
     socket.on("time-up", () => { io.emit("game-over", { winner: "mouse" }); });
 
     socket.on("disconnect", () => {
