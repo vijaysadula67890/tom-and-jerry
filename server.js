@@ -9,10 +9,10 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname)));
 
 const TABLES = [
-    { x: 295, y: 402, w: 95,  h: 100 },
-    { x: 591, y: 402, w: 94,  h: 100 },
-    { x: 246, y: 201, w: 95,  h: 100 },
-    { x: 591, y: 201, w: 94,  h: 100 },
+    { x: 253, y: 202, w: 94, h: 98 }, // table 1 top-left
+    { x: 603, y: 202, w: 94, h: 98 }, // table 2 top-right
+    { x: 303, y: 403, w: 93, h: 96 }, // table 3 bottom-left
+    { x: 603, y: 404, w: 92, h: 96 }, // table 4 bottom-right
 ];
 
 function isOnTable(px, py, margin = 40) {
