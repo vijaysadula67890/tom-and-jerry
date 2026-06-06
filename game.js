@@ -9,7 +9,6 @@ let gameover = false;
 
 const dpad = { left: false, right: false, up: false, down: false };
 
-// Table rectangles: { x1, y1, x2, y2 } from Paint corners
 const TABLES = [
     { x1: 360, y1: 480, x2: 475, y2: 600 },
     { x1: 720, y1: 480, x2: 835, y2: 600 },
@@ -17,30 +16,12 @@ const TABLES = [
     { x1: 720, y1: 240, x2: 835, y2: 360 },
 ];
 
-// Convert corner coords to center + size for Phaser
-function tableToRect(t) {
-    return {
-        x: (t.x1 + t.x2) / 2,
-        y: (t.y1 + t.y2) / 2,
-        w: t.x2 - t.x1,
-        h: t.y2 - t.y1,
-    };
-}
-
-// Check if a point is inside any table (with margin)
-function isOnTable(px, py, margin = 20) {
-    for (const t of TABLES) {
-        if (px > t.x1 - margin && px < t.x2 + margin &&
-            py > t.y1 - margin && py < t.y2 + margin) {
-            return true;
-        }
-    }
-    return false;
-}
+const SPEEDS = { cat: 2, mouse: 3 };
+const CATCH_DISTANCE = 30;
 
 const config = {
     type: Phaser.AUTO, width: 800, height: 600, parent: "game",
-    physics: { default: 'arcade', arcade: { debug: false } },
+    physics: { default: 'arcade', arcade: { debug: true } }, // debug ON so you can see boxes
     scene: { preload, create, update }
 };
 
@@ -64,9 +45,7 @@ socket.on("start-game", () => {
     gameStarted = true;
     document.getElementById("lobby").style.display = "none";
     document.getElementById("timer").style.display = "block";
-    if (isTouchDevice()) {
-        document.getElementById("dpad").style.display = "block";
-    }
+    if (isTouchDevice()) document.getElementById("dpad").style.display = "block";
     startTimer();
     socket.emit("request-players");
 });
@@ -75,7 +54,7 @@ function isTouchDevice() {
     return ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 }
 
-function spawnOrMovePlayers(data) {
+socket.on("players", (data) => {
     if (!phaserScene) return;
     players = data;
     const scene = phaserScene;
@@ -83,10 +62,19 @@ function spawnOrMovePlayers(data) {
     for (let id in players) {
         if (!scene.playerSprites[id]) {
             const role = players[id].role;
+
+            // Create sprite WITH physics body
             const sprite = scene.physics.add.sprite(players[id].x, players[id].y, role);
             sprite.setScale(role === "cat" ? 0.175 : 0.025);
-            scene.physics.add.collider(sprite, scene.walls);
+            sprite.setCollideWorldBounds(true);
+
+            // Add collider against EVERY wall individually to be safe
+            scene.wallBodies.forEach(wallBody => {
+                scene.physics.add.collider(sprite, wallBody);
+            });
+
             scene.playerSprites[id] = sprite;
+
             if (id === socket.id) {
                 myId = id;
                 myRole = role;
@@ -96,9 +84,7 @@ function spawnOrMovePlayers(data) {
             scene.playerSprites[id].y = players[id].y;
         }
     }
-}
-
-socket.on("players", spawnOrMovePlayers);
+});
 
 socket.on("game-over", (data) => {
     if (gameover) return;
@@ -131,38 +117,44 @@ function preload() {
 
 function create() {
     phaserScene = this;
+    this.playerSprites = {};
+    this.wallBodies = []; // store individual wall bodies
 
     const map = this.add.image(400, 300, 'house');
     map.displayWidth = 800;
     map.displayHeight = 600;
 
-    this.walls = this.physics.add.staticGroup();
-
     // Boundary walls
-    const boundaries = [
-        { x: 400, y: 0,   w: 800, h: 10 },
-        { x: 400, y: 600, w: 800, h: 10 },
-        { x: 0,   y: 300, w: 10,  h: 600 },
-        { x: 800, y: 300, w: 10,  h: 600 },
+    const allWalls = [
+        { x: 400, y: 0,   w: 800, h: 20 },  // top
+        { x: 400, y: 600, w: 800, h: 20 },  // bottom
+        { x: 0,   y: 300, w: 20,  h: 600 }, // left
+        { x: 800, y: 300, w: 20,  h: 600 }, // right
+        // Table 1
+        { x: (360+475)/2, y: (480+600)/2, w: 475-360, h: 600-480 },
+        // Table 2
+        { x: (720+835)/2, y: (480+600)/2, w: 835-720, h: 600-480 },
+        // Table 3
+        { x: (300+415)/2, y: (240+360)/2, w: 415-300, h: 360-240 },
+        // Table 4
+        { x: (720+835)/2, y: (240+360)/2, w: 835-720, h: 360-240 },
     ];
 
-    // Table walls from measured corners
-    const tableWalls = TABLES.map(tableToRect);
-
-    for (const d of [...boundaries, ...tableWalls]) {
-        const wall = this.add.rectangle(d.x, d.y, d.w, d.h);
-        this.physics.add.existing(wall, true);
-        this.walls.add(wall);
+    for (const d of allWalls) {
+        // Use a physics image instead of rectangle for reliable static body
+        const wall = this.add.zone(d.x, d.y, d.w, d.h);
+        this.physics.add.existing(wall, true); // true = static
+        wall.body.setSize(d.w, d.h);
+        wall.body.reset(d.x, d.y);
+        this.wallBodies.push(wall);
     }
 
-    this.playerSprites = {};
     this.cursors = this.input.keyboard.createCursorKeys();
-
     setupDpad();
 }
 
 function setupDpad() {
-    const press   = { "btn-up": "up", "btn-down": "down", "btn-left": "left", "btn-right": "right" };
+    const press = { "btn-up": "up", "btn-down": "down", "btn-left": "left", "btn-right": "right" };
     for (const id in press) {
         const el = document.getElementById(id);
         if (!el) continue;
@@ -178,11 +170,6 @@ function setupDpad() {
 function selectRole(role) { socket.emit("select-role", role); }
 function startGame() { socket.emit("toggle-ready"); }
 
-const CATCH_DISTANCE = 30;
-
-// Speed: base 4 — Tom: 4 * 0.5 = 2, Jerry: 4 * 0.75 = 3
-const SPEEDS = { cat: 2, mouse: 3 };
-
 function update() {
     if (!gameStarted || !myId || !this.playerSprites[myId] || gameover) return;
 
@@ -195,13 +182,12 @@ function update() {
     const goUp    = this.cursors.up.isDown    || dpad.up;
     const goDown  = this.cursors.down.isDown  || dpad.down;
 
-    if (goLeft)       { sprite.x -= speed; moved = true; }
-    else if (goRight) { sprite.x += speed; moved = true; }
-    if (goUp)         { sprite.y -= speed; moved = true; }
-    else if (goDown)  { sprite.y += speed; moved = true; }
-
-    sprite.x = Phaser.Math.Clamp(sprite.x, 10, 790);
-    sprite.y = Phaser.Math.Clamp(sprite.y, 10, 590);
+    // Use velocity for proper physics collision
+    sprite.setVelocity(0, 0);
+    if (goLeft)       { sprite.setVelocityX(-speed * 60); moved = true; }
+    else if (goRight) { sprite.setVelocityX( speed * 60); moved = true; }
+    if (goUp)         { sprite.setVelocityY(-speed * 60); moved = true; }
+    else if (goDown)  { sprite.setVelocityY( speed * 60); moved = true; }
 
     if (moved) socket.emit("move", { x: sprite.x, y: sprite.y });
 
