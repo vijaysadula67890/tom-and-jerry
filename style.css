@@ -1,11 +1,50 @@
+* { box-sizing: border-box; }
+
 body {
     margin: 0;
+    padding: 0;
     overflow: hidden;
     background-color: #222;
     font-family: 'Arial', sans-serif;
     color: white;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
 
+/* Scale the game canvas to fit the screen */
+#game-wrapper {
+    width: 100vw;
+    /* On mobile leave room for dpad; on desktop full height */
+    height: calc(100vh - 160px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+#game canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain;
+}
+
+/* Timer at top */
+#timer {
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px #000;
+    padding: 8px 0 0 0;
+    text-align: center;
+    width: 100%;
+}
+
+/* UI layer for lobby only */
 #ui-layer {
     position: absolute;
     top: 0; left: 0;
@@ -18,35 +57,23 @@ body {
 }
 
 #lobby {
-    background: rgba(0, 0, 0, 0.85);
-    padding: 30px;
+    background: rgba(0, 0, 0, 0.88);
+    padding: 24px 30px;
     border-radius: 15px;
-    margin-top: 100px;
+    margin-top: 80px;
     pointer-events: auto;
     text-align: center;
     border: 2px solid #555;
 }
 
-#timer {
-    font-size: 32px;
-    margin-top: 20px;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px #000;
-}
-
-#game {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-}
+#lobby h2 { margin: 0 0 16px 0; font-size: 20px; }
 
 button {
     padding: 10px 20px;
     font-size: 16px;
     margin: 5px;
     cursor: pointer;
+    border-radius: 8px;
 }
 
 button:disabled {
@@ -54,10 +81,10 @@ button:disabled {
     opacity: 0.5;
 }
 
-/* ---- D-pad ---- */
+/* ---- D-pad: fixed to bottom, always visible on touch ---- */
 #dpad {
     position: fixed;
-    bottom: 30px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 100;
@@ -78,17 +105,17 @@ button:disabled {
 }
 
 #dpad-center {
-    width: 50px;
-    height: 50px;
+    width: 52px;
+    height: 52px;
 }
 
 #dpad button {
-    width: 60px;
-    height: 60px;
-    font-size: 22px;
-    background: rgba(255, 255, 255, 0.25);
-    border: 2px solid rgba(255,255,255,0.5);
-    border-radius: 12px;
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255,255,255,0.45);
+    border-radius: 14px;
     color: white;
     padding: 0;
     margin: 0;
@@ -98,5 +125,12 @@ button:disabled {
 }
 
 #dpad button:active {
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Desktop: no dpad needed, full height game */
+@media (min-width: 768px) {
+    #game-wrapper {
+        height: calc(100vh - 50px);
+    }
 }
