@@ -80,7 +80,7 @@ socket.on("players", (data) => {
         if (!scene.playerSprites[id]) {
             const role = players[id].role;
             const sprite = scene.physics.add.sprite(players[id].x, players[id].y, role);
-            sprite.setScale(role === "cat" ? 0.175 : 0.025);
+            sprite.setScale(role === "cat" ? 0.15 : 0.025);
             sprite.setCollideWorldBounds(true);
             sprite.body.setCollideWorldBounds(true);
             scene.wallBodies.forEach(wall => scene.physics.add.collider(sprite, wall));
