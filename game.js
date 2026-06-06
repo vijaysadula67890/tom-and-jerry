@@ -9,11 +9,12 @@ let gameover = false;
 
 const dpad = { left: false, right: false, up: false, down: false };
 
+// Coordinates scaled from 975x717 → 800x600
 const TABLES = [
-    { x1: 360, y1: 480, x2: 475, y2: 600 },
-    { x1: 720, y1: 480, x2: 835, y2: 600 },
-    { x1: 300, y1: 240, x2: 415, y2: 360 },
-    { x1: 720, y1: 240, x2: 835, y2: 360 },
+    { x1: 295, y1: 402, x2: 390, y2: 502 }, // Table 1 bottom-left
+    { x1: 591, y1: 402, x2: 685, y2: 502 }, // Table 2 bottom-right
+    { x1: 246, y1: 201, x2: 341, y2: 301 }, // Table 3 top-left
+    { x1: 591, y1: 201, x2: 685, y2: 301 }, // Table 4 top-right
 ];
 
 const SPEEDS = { cat: 2, mouse: 3 };
@@ -21,7 +22,7 @@ const CATCH_DISTANCE = 30;
 
 const config = {
     type: Phaser.AUTO, width: 800, height: 600, parent: "game",
-    physics: { default: 'arcade', arcade: { debug: true } }, // debug ON so you can see boxes
+    physics: { default: 'arcade', arcade: { debug: true } },
     scene: { preload, create, update }
 };
 
@@ -62,23 +63,14 @@ socket.on("players", (data) => {
     for (let id in players) {
         if (!scene.playerSprites[id]) {
             const role = players[id].role;
-
-            // Create sprite WITH physics body
             const sprite = scene.physics.add.sprite(players[id].x, players[id].y, role);
             sprite.setScale(role === "cat" ? 0.175 : 0.025);
             sprite.setCollideWorldBounds(true);
-
-            // Add collider against EVERY wall individually to be safe
-            scene.wallBodies.forEach(wallBody => {
-                scene.physics.add.collider(sprite, wallBody);
+            scene.wallBodies.forEach(wall => {
+                scene.physics.add.collider(sprite, wall);
             });
-
             scene.playerSprites[id] = sprite;
-
-            if (id === socket.id) {
-                myId = id;
-                myRole = role;
-            }
+            if (id === socket.id) { myId = id; myRole = role; }
         } else if (id !== socket.id) {
             scene.playerSprites[id].x = players[id].x;
             scene.playerSprites[id].y = players[id].y;
@@ -102,10 +94,7 @@ function startTimer() {
     timerInterval = setInterval(() => {
         timeLeft--;
         document.getElementById("timer").innerText = "Time: " + timeLeft;
-        if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            socket.emit("time-up");
-        }
+        if (timeLeft <= 0) { clearInterval(timerInterval); socket.emit("time-up"); }
     }, 1000);
 }
 
@@ -118,32 +107,28 @@ function preload() {
 function create() {
     phaserScene = this;
     this.playerSprites = {};
-    this.wallBodies = []; // store individual wall bodies
+    this.wallBodies = [];
 
     const map = this.add.image(400, 300, 'house');
     map.displayWidth = 800;
     map.displayHeight = 600;
 
-    // Boundary walls
     const allWalls = [
-        { x: 400, y: 0,   w: 800, h: 20 },  // top
-        { x: 400, y: 600, w: 800, h: 20 },  // bottom
-        { x: 0,   y: 300, w: 20,  h: 600 }, // left
-        { x: 800, y: 300, w: 20,  h: 600 }, // right
-        // Table 1
-        { x: (360+475)/2, y: (480+600)/2, w: 475-360, h: 600-480 },
-        // Table 2
-        { x: (720+835)/2, y: (480+600)/2, w: 835-720, h: 600-480 },
-        // Table 3
-        { x: (300+415)/2, y: (240+360)/2, w: 415-300, h: 360-240 },
-        // Table 4
-        { x: (720+835)/2, y: (240+360)/2, w: 835-720, h: 360-240 },
+        // Boundaries
+        { x: 400, y:   5, w: 800, h: 10 },
+        { x: 400, y: 595, w: 800, h: 10 },
+        { x:   5, y: 300, w: 10,  h: 600 },
+        { x: 795, y: 300, w: 10,  h: 600 },
+        // Tables (scaled coordinates)
+        { x: 342, y: 452, w:  95, h: 100 },
+        { x: 638, y: 452, w:  94, h: 100 },
+        { x: 293, y: 251, w:  95, h: 100 },
+        { x: 638, y: 251, w:  94, h: 100 },
     ];
 
     for (const d of allWalls) {
-        // Use a physics image instead of rectangle for reliable static body
         const wall = this.add.zone(d.x, d.y, d.w, d.h);
-        this.physics.add.existing(wall, true); // true = static
+        this.physics.add.existing(wall, true);
         wall.body.setSize(d.w, d.h);
         wall.body.reset(d.x, d.y);
         this.wallBodies.push(wall);
@@ -175,21 +160,20 @@ function update() {
 
     const sprite = this.playerSprites[myId];
     const speed = SPEEDS[myRole] || 3;
-    let moved = false;
 
     const goLeft  = this.cursors.left.isDown  || dpad.left;
     const goRight = this.cursors.right.isDown || dpad.right;
     const goUp    = this.cursors.up.isDown    || dpad.up;
     const goDown  = this.cursors.down.isDown  || dpad.down;
 
-    // Use velocity for proper physics collision
     sprite.setVelocity(0, 0);
-    if (goLeft)       { sprite.setVelocityX(-speed * 60); moved = true; }
-    else if (goRight) { sprite.setVelocityX( speed * 60); moved = true; }
-    if (goUp)         { sprite.setVelocityY(-speed * 60); moved = true; }
-    else if (goDown)  { sprite.setVelocityY( speed * 60); moved = true; }
+    if (goLeft)       sprite.setVelocityX(-speed * 60);
+    else if (goRight) sprite.setVelocityX( speed * 60);
+    if (goUp)         sprite.setVelocityY(-speed * 60);
+    else if (goDown)  sprite.setVelocityY( speed * 60);
 
-    if (moved) socket.emit("move", { x: sprite.x, y: sprite.y });
+    if (goLeft || goRight || goUp || goDown)
+        socket.emit("move", { x: sprite.x, y: sprite.y });
 
     if (myRole === "cat") {
         for (let id in this.playerSprites) {
