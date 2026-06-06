@@ -9,20 +9,18 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname)));
 
-// Same table data as client
+// Scaled coordinates matching game.js
 const TABLES = [
-    { x1: 360, y1: 480, x2: 475, y2: 600 },
-    { x1: 720, y1: 480, x2: 835, y2: 600 },
-    { x1: 300, y1: 240, x2: 415, y2: 360 },
-    { x1: 720, y1: 240, x2: 835, y2: 360 },
+    { x1: 295, y1: 402, x2: 390, y2: 502 },
+    { x1: 591, y1: 402, x2: 685, y2: 502 },
+    { x1: 246, y1: 201, x2: 341, y2: 301 },
+    { x1: 591, y1: 201, x2: 685, y2: 301 },
 ];
 
 function isOnTable(px, py, margin = 40) {
     for (const t of TABLES) {
         if (px > t.x1 - margin && px < t.x2 + margin &&
-            py > t.y1 - margin && py < t.y2 + margin) {
-            return true;
-        }
+            py > t.y1 - margin && py < t.y2 + margin) return true;
     }
     return false;
 }
@@ -36,14 +34,10 @@ function randomSpawn() {
     return { x, y };
 }
 
-let roomState = {
-    code: Math.floor(1000 + Math.random() * 9000),
-    players: {}
-};
+let roomState = { code: Math.floor(1000 + Math.random() * 9000), players: {} };
 
 io.on("connection", (socket) => {
     console.log("Player Connected:", socket.id);
-
     socket.emit("room-code", roomState.code);
     socket.emit("lobby-update", roomState.players);
 
@@ -60,18 +54,15 @@ io.on("connection", (socket) => {
         if (roomState.players[socket.id]) {
             roomState.players[socket.id].ready = !roomState.players[socket.id].ready;
             io.emit("lobby-update", roomState.players);
-
-            const playersList = Object.values(roomState.players);
-            if (playersList.length === 2 && playersList.every(p => p.ready)) {
+            const list = Object.values(roomState.players);
+            if (list.length === 2 && list.every(p => p.ready)) {
                 io.emit("start-game");
                 io.emit("players", roomState.players);
             }
         }
     });
 
-    socket.on("request-players", () => {
-        socket.emit("players", roomState.players);
-    });
+    socket.on("request-players", () => socket.emit("players", roomState.players));
 
     socket.on("move", (data) => {
         if (roomState.players[socket.id]) {
@@ -81,8 +72,8 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("caught",  () => { io.emit("game-over", { winner: "cat"   }); });
-    socket.on("time-up", () => { io.emit("game-over", { winner: "mouse" }); });
+    socket.on("caught",  () => io.emit("game-over", { winner: "cat"   }));
+    socket.on("time-up", () => io.emit("game-over", { winner: "mouse" }));
 
     socket.on("disconnect", () => {
         delete roomState.players[socket.id];
