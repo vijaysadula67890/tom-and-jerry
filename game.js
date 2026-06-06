@@ -87,8 +87,8 @@ socket.on("players", (data) => {
             scene.playerSprites[id] = sprite;
             if (id === socket.id) { myId = id; myRole = role; }
         } else if (id !== socket.id) {
-            scene.playerSprites[id].x = Phaser.Math.Clamp(players[id].x, 20, 780);
-            scene.playerSprites[id].y = Phaser.Math.Clamp(players[id].y, 20, 580);
+            scene.playerSprites[id].x = Phaser.Math.Clamp(players[id].x, 15, 785);
+            scene.playerSprites[id].y = Phaser.Math.Clamp(players[id].y, 15, 585);
         }
     }
 });
@@ -128,8 +128,8 @@ function create() {
     map.displayWidth = 800;
     map.displayHeight = 600;
 
-    // Use Phaser world bounds for left/right/top/bottom edges — pixel perfect
-    this.physics.world.setBounds(0, 0, 800, 600);
+    // Inset world bounds so sprites can't go past the visible edge
+    this.physics.world.setBounds(15, 15, 770, 570);
     this.physics.world.setBoundsCollision(true, true, true, true);
 
     for (const d of TABLE_WALLS) {
