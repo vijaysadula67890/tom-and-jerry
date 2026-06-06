@@ -9,12 +9,12 @@ let gameover = false;
 
 const dpad = { left: false, right: false, up: false, down: false };
 
-// Top-left corner + size (scaled from 975x717 to 800x600)
+// Exact coordinates from 800x600 resized house.png (left, right, top, bottom)
 const TABLE_WALLS = [
-    { x: 295, y: 402, w: 95,  h: 100 }, // bottom-left
-    { x: 591, y: 402, w: 94,  h: 100 }, // bottom-right
-    { x: 246, y: 201, w: 95,  h: 100 }, // top-left
-    { x: 591, y: 201, w: 94,  h: 100 }, // top-right
+    { x: 253, y: 202, w: 94, h: 98 }, // table 1 top-left
+    { x: 603, y: 202, w: 94, h: 98 }, // table 2 top-right
+    { x: 303, y: 403, w: 93, h: 96 }, // table 3 bottom-left
+    { x: 603, y: 404, w: 92, h: 96 }, // table 4 bottom-right
 ];
 
 // For spawn exclusion — same coords
